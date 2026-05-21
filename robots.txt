@@ -1,0 +1,19 @@
+# robots.txt для Анти-ИИ-Квен-Компаньон
+# Anti-AI Qwen Companion
+
+User-agent: *
+Allow: /
+
+# Запрещаем индексацию служебных страниц (если появятся)
+Disallow: /private/
+Disallow: /admin/
+Disallow: /assets/backup/
+
+# Указываем путь к карте сайта
+Sitemap: https://anti-ai-qwen-companion.vercel.app/sitemap.xml
+
+# Задержка между запросами (для уважения к серверу)
+Crawl-delay: 1
+
+# Хост (для поисковых систем, поддерживающих директиву)
+Host: https://anti-ai-qwen-companion.vercel.app
