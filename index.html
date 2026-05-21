@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Anti-AI | Qwen Companion Pro</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <style>
+    :root {
+      --bg: #0a0c14; --surface: rgba(20,24,36,0.88); --glass: rgba(255,255,255,0.06);
+      --text: #e6eaf0; --muted: #8a92a6;
+      --accent: #00d4ff; --accent-glow: rgba(0,212,255,0.4);
+      --success: #2ecc71; --warning: #f39c12; --danger: #e74c3c;
+      --font: system-ui, -apple-system, "Segoe UI", monospace;
+      --radius: 14px; --transition: 0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; display: flex; justify-content: center; padding: 16px; }
+    #app { width: 100%; max-width: 760px; background: var(--surface); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius); box-shadow: 0 12px 40px rgba(0,0,0,0.6); padding: 20px; display: flex; flex-direction: column; gap: 16px; position: relative; overflow: hidden; }
+    #app::before { content: ''; position: absolute; top: -30%; left: -20%; width: 140%; height: 140%; background: radial-gradient(circle at 20% 20%, rgba(0,212,255,0.09), transparent 50%), radial-gradient(circle at 80% 80%, rgba(155,89,182,0.09), transparent 50%); pointer-events: none; z-index: 0; }
+
+    /* HERO */
+    .hero-section { text-align: center; padding: 10px 0 16px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .hero-image { max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,212,255,0.2); margin: 12px 0; border: 1px solid rgba(255,255,255,0.1); }
+    .hero-fallback { padding: 30px; background: rgba(0,0,0,0.3); border-radius: 12px; margin: 12px 0; color: var(--muted); }
+
+    /* CONCEPT GALLERY */
+    .concept-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 12px; }
+    .concept-card { background: rgba(0,0,0,0.3); border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); transition: var(--transition); }
+    .concept-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,212,255,0.25); border-color: var(--accent); }
+    .concept-card img { width: 100%; height: auto; display: block; }
+    .concept-caption { padding: 10px; font-size: 0.8rem; color: var(--muted); text-align: center; font-weight: 600; }
+
+    /* HEADER */
+    header { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2; }
+    h1 { font-size: 1.3rem; background: linear-gradient(90deg, var(--accent), #6c5ce7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: flex; align-items: center; gap: 10px; }
+    h1 img { width: 24px; height: 24px; filter: drop-shadow(0 0 8px var(--accent-glow)); animation: float 4s ease-in-out infinite; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+    .hdr-actions { display: flex; gap: 8px; }
+    #langBtn, #guideBtn { background: var(--glass); border: 1px solid rgba(255,255,255,0.2); padding: 6px 10px; border-radius: 8px; color: var(--text); cursor: pointer; font-weight: bold; transition: var(--transition); font-size: 0.8rem; }
+    #langBtn:hover, #guideBtn:hover { border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow); }
+
+    /* TABS */
+    .tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; position: relative; z-index: 2; }
+    .tab-btn { flex: 1; padding: 10px; background: var(--glass); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: var(--muted); font-weight: 600; cursor: pointer; transition: var(--transition); white-space: nowrap; }
+    .tab-btn.active { background: rgba(0,212,255,0.15); border-color: var(--accent); color: var(--accent); box-shadow: 0 0 20px rgba(0,212,255,0.2); }
+
+    /* CONTENT */
+    .tab-content { display: none; flex-direction: column; gap: 12px; position: relative; z-index: 2; animation: fadeIn 0.3s ease; max-height: 55vh; overflow-y: auto; padding-right: 4px; }
+    .tab-content.active { display: flex; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    .tab-content::-webkit-scrollbar { width: 6px; }
+    .tab-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+
+    .card { background: rgba(0,0,0,0.35); padding: 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); transition: var(--transition); }
+    .card:hover { border-color: rgba(255,255,255,0.15); }
+    .card h3 { color: var(--accent); margin-bottom: 6px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; }
+    .card p, .card li { font-size: 0.82rem; color: var(--muted); line-height: 1.5; }
+    .card ul, .card ol { padding-left: 18px; margin-top: 4px; }
+    .card li { margin-bottom: 4px; }
+    .card-img { width: 100%; border-radius: 8px; margin: 10px 0; border: 1px solid rgba(255,255,255,0.08); }
+
+    /* FORMS */
+    input, textarea, select { width: 100%; padding: 10px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: var(--text); font-family: var(--font); outline: none; transition: var(--transition); }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,212,255,0.2); }
+    textarea { min-height: 60px; resize: vertical; }
+
+    /* BUTTONS */
+    .btn { padding: 10px 14px; background: linear-gradient(135deg, var(--accent), #6c5ce7); color: #0a0c14; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: var(--transition); box-shadow: 0 4px 15px rgba(0,212,255,0.3); display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px var(--accent-glow); }
+    .btn.secondary { background: var(--glass); color: var(--text); border: 1px solid rgba(255,255,255,0.2); box-shadow: none; }
+    .btn.danger { background: linear-gradient(135deg, var(--danger), #c0392b); color: #fff; }
+    .btn-group { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+    /* PREVIEW */
+    .preview-box { background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; border-left: 3px solid var(--accent); font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; word-break: break-word; max-height: 120px; overflow-y: auto; margin-top: 8px; position: relative; }
+    .preview-actions { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; }
+    .preview-actions button { padding: 4px 8px; font-size: 0.7rem; }
+
+    /* BADGES */
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; font-size: 0.7rem; margin: 4px 4px 4px 0; opacity: 0.4; transition: 0.3s; }
+    .badge.earned { opacity: 1; background: rgba(0,212,255,0.15); border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+
+    /* TRAINER */
+    .trainer-opt { padding: 12px; background: var(--glass); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; margin: 4px 0; cursor: pointer; transition: var(--transition); }
+    .trainer-opt:hover { background: rgba(255,255,255,0.12); border-color: var(--accent); }
+    .trainer-opt.correct { background: rgba(46,204,113,0.15); border-color: var(--success); }
+    .trainer-opt.wrong { background: rgba(231,76,60,0.15); border-color: var(--danger); }
+    .progress-bar { height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin: 8px 0; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--success)); width: 0%; transition: width 0.5s ease; }
+
+    /* CHECKLIST */
+    .checklist-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06); align-items: flex-start; }
+    .checklist-item input { margin-top: 4px; accent-color: var(--accent); width: 18px; height: 18px; }
+    .checklist-item label { cursor: pointer; flex: 1; transition: var(--transition); }
+    .checklist-item.completed label { text-decoration: line-through; color: var(--muted); opacity: 0.7; }
+
+    /* RISK BADGES */
+    .risk-badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; margin: 2px; }
+    .risk-badge.high { background: rgba(231,76,60,0.2); border: 1px solid var(--danger); color: #ff8a8a; }
+    .risk-badge.med { background: rgba(243,156,18,0.2); border: 1px solid var(--warning); color: #fcd06f; }
+    .risk-badge.safe { background: rgba(46,204,113,0.2); border: 1px solid var(--success); color: #85e6b5; }
+
+    /* SUPPORT */
+    .support { text-align: center; padding: 14px; background: linear-gradient(135deg, rgba(0,212,255,0.1), rgba(155,89,182,0.1)); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); margin-top: auto; position: relative; z-index: 2; }
+    .support h3 { color: var(--accent); margin-bottom: 8px; }
+    .support p { font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; }
+    .phone-box { background: rgba(0,0,0,0.3); padding: 6px 10px; border-radius: 6px; display: inline-block; margin: 4px 0; }
+    .catalog-link { color: var(--accent); text-decoration: none; font-weight: bold; display: block; margin-top: 4px; }
+    footer { text-align: center; color: var(--muted); font-size: 0.7rem; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); margin-top: 8px; position: relative; z-index: 2; }
+
+    /* MODAL */
+    .modal { position: fixed; inset: 0; background: rgba(2,2,8,0.92); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 100; padding: 20px; }
+    .modal.open { display: flex; }
+    .modal-content { background: var(--surface); padding: 24px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.15); max-width: 500px; width: 100%; max-height: 85vh; overflow-y: auto; position: relative; }
+    .modal-close { position: absolute; top: 12px; right: 12px; background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer; }
+    .modal-image { max-width: 100%; border-radius: 8px; margin: 12px 0; }
+
+    @media(max-width:480px) {
+      #app { padding: 14px; }
+      h1 { font-size: 1.1rem; }
+      .tab-btn { padding: 8px; font-size: 0.75rem; }
+      .card { padding: 10px; }
+      .btn { padding: 8px 10px; font-size: 0.8rem; }
+      .concept-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<main id="app">
+  <!-- ========== HERO SECTION ========== -->
+  <div class="hero-section">
+    <h1><img src="favicon.ico" alt="🤖" onerror="this.style.display='none'"> <span data-i18n="title">Qwen Companion</span></h1>
+    <p style="color:var(--muted); font-size:0.85rem; margin-top:4px;">Anti-AI Security Assistant • Offline • Private</p>
+    
+    <!-- MAIN DASHBOARD IMAGE -->
+    <img src="assets/images/dashboard.png" alt="Anti-AI Qwen Companion Dashboard" class="hero-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
+    <div class="hero-fallback" style="display:none;">
+      <p style="font-size:2rem; margin-bottom:8px;">🤖</p>
+      <p>Dashboard Preview</p>
+      <p style="font-size:0.75rem;">Save images to <code>assets/images/</code></p>
+    </div>
+
+    <div class="hdr-actions" style="justify-content:center; margin-top:12px;">
+      <button id="guideBtn" onclick="openModal('guideModal')">📖 <span data-i18n="guide_btn">Гайд 60с</span></button>
+      <button id="langBtn" onclick="toggleLang()">🌐 EN</button>
+    </div>
+  </div>
+
+  <!-- ========== CONCEPT GALLERY ========== -->
+  <div class="concept-grid">
+    <div class="concept-card">
+      <img src="assets/images/prompt-formula.png" alt="Prompt Formula" onerror="this.parentElement.style.display='none'">
+      <div class="concept-caption">🎯 Формула промпта</div>
+    </div>
+    <div class="concept-card">
+      <img src="assets/images/trainer-quiz.png" alt="Trainer Quiz" onerror="this.parentElement.style.display='none'">
+      <div class="concept-caption">🧠 Тренажёр</div>
+    </div>
+    <div class="concept-card">
+      <img src="assets/images/privacy-scanner.png" alt="Privacy Scanner" onerror="this.parentElement.style.display='none'">
+      <div class="concept-caption">🔐 Сканер</div>
+    </div>
+  </div>
+
+  <!-- ========== TABS ========== -->
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="course">📚 <span data-i18n="tab_course">Курс</span></button>
+    <button class="tab-btn" data-tab="prompts">🎨 <span data-i18n="tab_prompts">Промпты</span></button>
+    <button class="tab-btn" data-tab="trainer">🧠 <span data-i18n="tab_trainer">Тренажёр</span></button>
+    <button class="tab-btn" data-tab="privacy">🔐 <span data-i18n="tab_privacy">Приватность</span></button>
+  </nav>
+
+  <!-- ========== 📚 COURSE ========== -->
+  <section id="course" class="tab-content active">
+    <div class="card" style="text-align:center;">
+      <h3>🎯 Формула идеального промпта</h3>
+      <img src="assets/images/prompt-formula.png" alt="Perfect AI Prompt Formula" class="card-img" onerror="this.style.display='none'">
+      <p style="font-size:0.82rem; color:var(--muted); margin-top:8px;">
+        <b>👤 Role + 🌐 Context + 🎯 Task + ⚖️ Constraints</b> = Качественный результат
+      </p>
+    </div>
+    <div id="courseContainer"></div>
+    <div class="card" style="border-color:var(--warning); background:rgba(243,156,18,0.05);">
+      <h3 style="color:var(--warning);">💡 <span data-i18n="hack_t">Лайфхак для новичков</span></h3>
+      <p data-i18n="hack_c">Не знаете, как составить запрос? Нажмите кнопку.</p>
+      <button class="btn secondary" style="margin-top:8px; font-size:0.8rem;" onclick="loadHackPrompt()">📥 Загрузить шаблон</button>
+    </div>
+  </section>
+
+  <!-- ========== 🎨 PROMPTS ========== -->
+  <section id="prompts" class="tab-content">
+    <div class="card">
+      <h3 data-i18n="prompt_title">📝 Конструктор по формуле</h3>
+      <p data-i18n="prompt_desc">Заполните 4 поля. ИИ получит чёткую задачу.</p>
+      <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+        <input type="text" id="p_role" placeholder="👤 Роль (напр: Ты опытный маркетолог)">
+        <input type="text" id="p_context" placeholder="🌐 Контекст (напр: ИТ-курсы для подростков)">
+        <input type="text" id="p_task" placeholder="🎯 Задача (напр: Напиши 3 заголовка)">
+        <input type="text" id="p_constraints" placeholder="⚖️ Ограничения (напр: До 300 знаков, списком)">
+      </div>
+      <div class="btn-group">
+        <button class="btn" onclick="assemblePrompt()" style="flex:1;">✨ Собрать</button>
+        <button class="btn secondary" onclick="copyPrompt()" style="flex:1;">📋 Копировать</button>
+        <button class="btn secondary" onclick="exportPrompt()" style="flex:1;">💾 .txt</button>
+      </div>
+    </div>
+    <div class="preview-box" id="promptPreview">
+      <div class="preview-actions">
+        <button class="btn secondary" onclick="shareSummary()">🔗</button>
+      </div>
+      <span data-i18n="preview_placeholder">Здесь появится ваш промпт...</span>
+    </div>
+  </section>
+
+  <!-- ========== 🧠 TRAINER ========== -->
+  <section id="trainer" class="tab-content">
+    <div class="card" style="text-align:center;">
+      <h3 data-i18n="trainer_title">🔍 Тренажёр критического мышления</h3>
+      <img src="assets/images/trainer-quiz.png" alt="Critical Thinking Trainer" class="card-img" onerror="this.style.display='none'">
+      <p data-i18n="trainer_desc">ИИ ошибается. Научитесь проверять факты.</p>
+    </div>
+
+    <!-- BADGES VISUALIZATION -->
+    <div class="card" style="text-align:center;">
+      <h3>🏆 Система достижений</h3>
+      <img src="assets/images/badges-system.png" alt="Achievement Badges" class="card-img" onerror="this.style.display='none'">
+      <div class="progress-bar"><div id="trainerProgress" class="progress-fill"></div></div>
+      <div id="badgesContainer" style="margin-top:8px; display:flex; flex-wrap:wrap; justify-content:center;"></div>
+    </div>
+
+    <div class="card" id="trainerCard">
+      <p id="trainerQ" style="margin-bottom:10px; font-weight:bold;"></p>
+      <div id="trainerOpts"></div>
+      <p id="trainerFeedback" style="margin-top:10px; font-size:0.82rem; color:var(--muted); display:none;"></p>
+    </div>
+    <div class="btn-group">
+      <button class="btn secondary" onclick="nextTrainer()" id="trainerNextBtn" style="display:none; flex:1;" data-i18n="btn_next">Далее</button>
+      <button class="btn danger" onclick="resetTrainer()" style="flex:0.3; font-size:0.8rem;">🔄</button>
+    </div>
+    <div class="card" id="certBox" style="display:none; text-align:center; border-color:var(--success); background:rgba(46,204,113,0.05);">
+      <h3 style="color:var(--success);">🏆 Сертификат готов</h3>
+      <p style="margin:8px 0;">Результат: <b id="certScore">0</b>/5 | Уровень: <b id="certLevel">-</b></p>
+      <button class="btn" onclick="downloadCert()">📜 Скачать</button>
+    </div>
+  </section>
+
+  <!-- ========== 🔐 PRIVACY ========== -->
+  <section id="privacy" class="tab-content">
+    <div class="card" style="text-align:center;">
+      <h3 data-i18n="privacy_title">🛡️ Сканер рисков</h3>
+      <img src="assets/images/privacy-scanner.png" alt="Privacy Risk Scanner" class="card-img" onerror="this.style.display='none'">
+      <p data-i18n="privacy_desc">Вставьте текст. Приложение найдёт чувствительные данные.</p>
+    </div>
+    <div class="card">
+      <textarea id="privacyInput" placeholder="Пример: Меня зовут Иван, телефон 89001234567..."></textarea>
+      <div class="btn-group">
+        <button class="btn" onclick="checkPrivacy()" style="flex:1;" data-i18n="btn_analyze">🔍 Проверить</button>
+        <button class="btn secondary" onclick="exportChecklist()" style="flex:1;">📥 Экспорт</button>
+      </div>
+    </div>
+    <div class="card" id="privacyResult" style="display:none;">
+      <h3 data-i18n="result_title">Результат</h3>
+      <div id="privacyBadges"></div>
+      <div class="preview-box" id="privacyCleaned" style="margin-top:8px;"></div>
+    </div>
+    <div class="card">
+      <h3 data-i18n="checklist_title">✅ Чек-лист перед отправкой</h3>
+      <div id="preCheckList"></div>
+    </div>
+  </section>
+
+  <!-- ========== SUPPORT ========== -->
+  <section class="support">
+    <h3 data-i18n="support_title">🤝 ПОДДЕРЖАТЬ ПРОЕКТ 💙</h3>
+    <p data-i18n="support_desc">Приложение бесплатное. Было и останется.<br>Поддержка разработки:</p>
+    <div class="phone-box"><span id="phoneNum" style="color:var(--accent); font-weight:bold;">8-920-227-56-76</span></div>
+    <button class="btn secondary" style="margin-top:6px; font-size:0.8rem;" onclick="copyPhone()">📋 Копировать</button>
+    <a href="https://ancf-hue.github.io/" target="_blank" class="catalog-link" data-i18n="catalog_link">🌟 Каталог Anti-AI Shield</a>
+  </section>
+
+  <footer data-i18n="footer">Анти-ИИ | 100% офлайн | Данные не покидают устройство</footer>
+</main>
+
+<!-- ========== 📖 GUIDE MODAL ========== -->
+<div id="guideModal" class="modal" onclick="if(event.target===this)closeModal('guideModal')">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('guideModal')">✕</button>
+    <h2 style="color:var(--accent); margin-bottom:12px;">🚀 Старт за 60 секунд</h2>
+    
+    <img src="assets/images/mobile-interface.png" alt="Mobile Interface" class="modal-image" onerror="this.style.display='none'">
+    
+    <ol style="padding-left:20px; color:var(--muted); line-height:1.6; font-size:0.85rem;">
+      <li>Откройте вкладку <b>📚 Курс</b> → изучите формулу.</li>
+      <li>Перейдите в <b>🎨 Промпты</b> → заполните 4 поля → «Собрать».</li>
+      <li>Скопируйте результат в ваш ИИ-чат.</li>
+      <li>Пройдите <b>🧠 Тренажёр</b> для проверки знаний.</li>
+      <li>Перед отправкой данных используйте <b>🔐 Сканер</b>.</li>
+    </ol>
+    <button class="btn" style="margin-top:16px; width:100%;" onclick="closeModal('guideModal')">Понятно, начинаю!</button>
+  </div>
+</div>
+
+<script>
+// ========== 📦 DATA LAYER ==========
+const DATA = {
+  course: [
+    { t:"🧠 Мышление: ИИ как стажёр", c:"Относитесь к ИИ не как к поисковику, а как к умному, но неопытному стажёру. Ему нужны чёткие инструкции и обратная связь." },
+    { t:"🛠️ Формула промпта", c:"<b>👤 Роль + 🌐 Контекст + 🎯 Задача + ⚖️ Ограничения</b>. Избегайте отрицаний, указывайте стиль. Разбивайте сложные задачи." },
+    { t:"📌 5 главных правил", c:"<ol><li>Декомпозируйте: сначала план, потом детали.</li><li>Один чат — одна тема.</li><li>Всегда проверяйте факты.</li><li>Давайте обратную связь.</li><li>Говорите естественно, без намёков.</li></ol>" },
+    { t:"💡 Лайфхак", c:"Не знаете, как спросить? Напишите: «Я хочу решить [задачу]. Задай мне 5 уточняющих вопросов для идеального результата»." }
+  ],
+  trainer: [
+    { q:"ИИ написал: «Эйнштейн получил Нобелевскую за теорию относительности». Что делать?", opts:["Согласиться","Перепроверить в реестре","Использовать как факт"], correct:1, expl:"ИИ часто путает даты и причины. Всегда сверяйтесь с источниками." },
+    { q:"Какой промпт лучше?", opts:["Напиши статью о котах","Действуй как ветеринар. Пост про шотландских вислоухих, 300 слов, дружелюбный тон.","Сделай что-нибудь про животных"], correct:1, expl:"Конкретика + Роль + Формат = предсказуемый результат." },
+    { q:"Почему нельзя отправлять паспортные данные в публичный ИИ?", opts:["Это медленно","Данные могут сохраняться для обучения","ИИ их удалит"], correct:1, expl:"Публичные сервисы часто хранят историю для дообучения моделей." },
+    { q:"ИИ предложил рецепт лекарства. Ваши действия?", opts:["Купить ингредиенты","Проконсультироваться с врачом","Спросить дозировку у ИИ"], correct:1, expl:"Медицинские советы ИИ — информационные. Не заменяют врача." },
+    { q:"ИИ выдал код с комментарием «// TODO: fix security». Что делать?", opts:["Игнорировать","Исправить уязвимость перед запуском","Удалить комментарий"], correct:1, expl:"ИИ может генерировать рабочий, но небезопасный код. Аудит обязателен." }
+  ],
+  checklist: [
+    {id:"ck1", ru:"Убраны ФИО, телефоны, адреса", en:"Removed names, phones, addresses"},
+    {id:"ck2", ru:"Факты помечены для проверки", en:"Facts marked for verification"},
+    {id:"ck3", ru:"Указана роль и тон ответа", en:"Role & tone specified"},
+    {id:"ck4", ru:"Задан формат и объём", en:"Format & length defined"},
+    {id:"ck5", ru:"Нет конфиденциальных данных", en:"No confidential data"},
+    {id:"ck6", ru:"Запрос разбит на части", en:"Request split logically"}
+  ],
+  badges: [
+    {id:"b1", name:"🥉 Новичок", req:1},
+    {id:"b2", name:"🥈 Аналитик", req:3},
+    {id:"b3", name:"🥇 Мастер", req:5}
+  ]
+};
+
+// ========== 🌍 I18N ==========
+const i18n = {
+  ru: { title:"Qwen Companion", tab_course:"Курс", tab_prompts:"Промпты", tab_trainer:"Тренажёр", tab_privacy:"Приватность",
+    guide_btn:"Гайд 60с", hack_t:"Лайфхак для новичков", hack_c:"Не знаете, как составить запрос? Нажмите кнопку.",
+    prompt_title:"📝 Конструктор по формуле", prompt_desc:"Заполните 4 поля. ИИ получит чёткую задачу.", preview_placeholder:"Здесь появится ваш промпт...",
+    trainer_title:"🔍 Тренажёр критического мышления", trainer_desc:"ИИ ошибается. Научитесь проверять факты.", btn_next:"Далее",
+    privacy_title:"🛡️ Сканер рисков", privacy_desc:"Вставьте текст. Приложение найдёт чувствительные данные.", btn_analyze:"🔍 Проверить", result_title:"Результат",
+    checklist_title:"✅ Чек-лист перед отправкой",
+    support_title:"🤝 ПОДДЕРЖАТЬ ПРОЕКТ 💙", support_desc:"Приложение бесплатное. Было и останется.<br>Поддержка:",
+    catalog_link:"🌟 Каталог Anti-AI Shield", footer:"Анти-ИИ | 100% офлайн | Данные не покидают устройство",
+    risk_phone:"Телефон", risk_email:"Email", risk_address:"Адрес", risk_doc:"Документы", safe_clean:"✅ Безопасно", copied:"✅ Скопировано!",
+    cert_title:"Сертификат Anti-AI Qwen Companion", cert_sub:"Подтверждает прохождение тренажёра по критическому мышлению."
+  },
+  en: { title:"Qwen Companion", tab_course:"Course", tab_prompts:"Prompts", tab_trainer:"Trainer", tab_privacy:"Privacy",
+    guide_btn:"60s Guide", hack_t:"Beginner Hack", hack_c:"Don't know how to ask? Click to load template.",
+    prompt_title:"📝 Formula Builder", prompt_desc:"Fill 4 fields. AI receives a clear task.", preview_placeholder:"Your prompt will appear here...",
+    trainer_title:"🔍 Critical Thinking Trainer", trainer_desc:"AI makes mistakes. Learn to verify facts.", btn_next:"Next",
+    privacy_title:"🛡️ Risk Scanner", privacy_desc:"Paste text. The app finds sensitive data.", btn_analyze:"🔍 Scan", result_title:"Result",
+    checklist_title:"✅ Pre-send Checklist",
+    support_title:"🤝 SUPPORT PROJECT ", support_desc:"Free forever. Was and will be.<br>Support:",
+    catalog_link:"🌟 Anti-AI Shield Catalog", footer:"Anti-AI | 100% Offline | Data Never Leaves Device",
+    risk_phone:"Phone", risk_email:"Email", risk_address:"Address", risk_doc:"Documents", safe_clean:"✅ Safe", copied:"✅ Copied!",
+    cert_title:"Anti-AI Qwen Companion Certificate", cert_sub:"Confirms completion of critical thinking & AI trainer."
+  }
+};
+
+// ========== 🧠 STATE ==========
+let currentLang = localStorage.getItem('ai_qwen_lang') || 'ru';
+let trainerIdx = 0, trainerScore = 0;
+let state = JSON.parse(localStorage.getItem('ai_qwen_state')) || { badges: [], cert: null };
+function saveState() { localStorage.setItem('ai_qwen_state', JSON.stringify(state)); }
+
+// ========== 🎨 RENDERERS ==========
+function t(key) { return i18n[currentLang][key] || key; }
+function applyLang() {
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.innerHTML = t(el.getAttribute('data-i18n')); });
+  document.getElementById('langBtn').textContent = currentLang === 'ru' ? '🌐 EN' : '🌐 RU';
+  renderCourse(); renderChecklist(); loadTrainer(); renderBadges();
+}
+function toggleLang() { currentLang = currentLang==='ru'?'en':'ru'; localStorage.setItem('ai_qwen_lang',currentLang); applyLang(); }
+function switchTab(id) {
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelector(`.tab-btn[data-tab="${id}"]`).classList.add('active');
+}
+function renderCourse() {
+  const box = document.getElementById('courseContainer'); box.innerHTML = '';
+  DATA.course.forEach(item => { box.innerHTML += `<div class="card"><h3>${item.t}</h3><p>${item.c}</p></div>`; });
+}
+function renderChecklist() {
+  const box = document.getElementById('preCheckList'); box.innerHTML = '';
+  DATA.checklist.forEach(item => {
+    const txt = currentLang==='ru'? item.ru : item.en;
+    box.innerHTML += `<div class="checklist-item"><input type="checkbox" id="${item.id}" onchange="this.parentElement.classList.toggle('completed')"><label for="${item.id}">${txt}</label></div>`;
+  });
+}
+function renderBadges() {
+  const box = document.getElementById('badgesContainer'); box.innerHTML = '';
+  DATA.badges.forEach(b => { box.innerHTML += `<span class="badge ${state.badges.includes(b.id)?'earned':''}">${b.name}</span>`; });
+}
+
+// ========== 🎮 TRAINER ==========
+function loadTrainer() {
+  if(trainerIdx >= DATA.trainer.length) {
+    document.getElementById('trainerQ').textContent = currentLang==='ru'?"✅ Тренажёр пройден!":"✅ Trainer complete!";
+    document.getElementById('trainerOpts').innerHTML = "";
+    document.getElementById('certBox').style.display = 'block';
+    document.getElementById('certScore').textContent = trainerScore;
+    const lvl = trainerScore>=5?"🥇 Мастер":trainerScore>=3?"🥈 Аналитик":"🥉 Новичок";
+    document.getElementById('certLevel').textContent = lvl;
+    state.cert = { score: trainerScore, level: lvl, date: new Date().toLocaleDateString() };
+    saveState(); checkBadges(); return;
+  }
+  document.getElementById('certBox').style.display = 'none';
+  const sc = DATA.trainer[trainerIdx];
+  document.getElementById('trainerQ').textContent = sc.q;
+  const opts = document.getElementById('trainerOpts'); opts.innerHTML="";
+  sc.opts.forEach((o,i)=>{
+    const b = document.createElement('div'); b.className='trainer-opt'; b.textContent=o;
+    b.onclick=()=>checkAnswer(i, sc.correct, sc.expl, b);
+    opts.appendChild(b);
+  });
+  document.getElementById('trainerProgress').style.width=`${(trainerIdx/DATA.trainer.length)*100}%`;
+  document.getElementById('trainerFeedback').style.display='none';
+  document.getElementById('trainerNextBtn').style.display='none';
+}
+function checkAnswer(sel, corr, expl, btn) {
+  document.querySelectorAll('.trainer-opt').forEach(b=>b.style.pointerEvents='none');
+  btn.classList.add(sel===corr?'correct':'wrong');
+  document.querySelectorAll('.trainer-opt')[corr].classList.add('correct');
+  const fb = document.getElementById('trainerFeedback');
+  fb.style.display='block'; fb.textContent = `${sel===corr ? '✅' : '❌'} ${expl}`;
+  fb.style.color = sel===corr ? 'var(--success)' : 'var(--danger)';
+  if(sel===corr) trainerScore++;
+  document.getElementById('trainerNextBtn').style.display='block';
+}
+function nextTrainer() { trainerIdx++; loadTrainer(); }
+function resetTrainer() { trainerIdx=0; trainerScore=0; loadTrainer(); }
+function checkBadges() {
+  DATA.badges.forEach(b => { if(trainerScore >= b.req && !state.badges.includes(b.id)) { state.badges.push(b.id); renderBadges(); saveState(); }});
+}
+
+// ========== 🛠️ PROMPT BUILDER ==========
+function assemblePrompt() {
+  const r=document.getElementById('p_role').value, c=document.getElementById('p_context').value;
+  const tk=document.getElementById('p_task').value, cons=document.getElementById('p_constraints').value;
+  let res = [];
+  if(r) res.push(`[Роль] ${r}`); if(c) res.push(`[Контекст] ${c}`);
+  if(tk) res.push(`[Задача] ${tk}`); if(cons) res.push(`[Ограничения] ${cons}`);
+  document.getElementById('promptPreview').innerHTML = res.length ? res.join('\n\n') : `<span data-i18n="preview_placeholder">${t('preview_placeholder')}</span>`;
+}
+function copyPrompt() { const txt = document.getElementById('promptPreview').innerText; if(!txt||txt.includes('preview')) return; navigator.clipboard.writeText(txt).then(()=>alert(t('copied'))); }
+function exportPrompt() { const txt = document.getElementById('promptPreview').innerText; if(!txt||txt.includes('preview')) return; downloadText('prompt.txt',txt); }
+function shareSummary() { const txt = document.getElementById('promptPreview').innerText; navigator.clipboard.writeText(`🤖 Anti-AI Prompt:\n${txt}`).then(()=>alert(t('copied'))); }
+function loadHackPrompt() {
+  document.getElementById('p_role').value = "Ты — опытный помощник-аналитик";
+  document.getElementById('p_context').value = "[Опишите задачу]";
+  document.getElementById('p_task').value = "Задай мне 5 уточняющих вопросов для идеального результата.";
+  document.getElementById('p_constraints').value = "Задавай вопросы списком. Дождись ответов перед решением.";
+  assemblePrompt();
+}
+
+// ========== 🔐 PRIVACY ==========
+function checkPrivacy() {
+  const txt = document.getElementById('privacyInput').value; if(!txt) return;
+  const risks=[], cleaned=txt.replace(/\b[\w.-]+@[\w.-]+\.\w{2,}\b/g, m=>{risks.push('risk_email'); return '[EMAIL]';})
+    .replace(/\b\d{10,12}\b/g, m=>{risks.push('risk_phone'); return '[PHONE]';})
+    .replace(/\b(ул\.|улица|пр\.|д\.|дом|кв\.|квартира)\s?\d+\b/gi, m=>{risks.push('risk_address'); return '[ADDRESS]';})
+    .replace(/\b(паспорт|снилс|инн|огрн|карта)\b/gi, m=>{risks.push('risk_doc'); return '[DOC]';});
+  const box = document.getElementById('privacyBadges'); box.innerHTML="";
+  if(risks.length===0) box.innerHTML=`<span class="risk-badge safe">${t('safe_clean')}</span>`;
+  else risks.forEach(r=>box.innerHTML+=`<span class="risk-badge ${r==='risk_doc'?'high':'med'}">${t(r)}</span>`);
+  document.getElementById('privacyCleaned').textContent = cleaned;
+  document.getElementById('privacyResult').style.display='block';
+}
+function exportChecklist() { let txt=`✅ Anti-AI Privacy Checklist\n`; DATA.checklist.forEach(i=>{txt+=`- [ ] ${currentLang==='ru'?i.ru:i.en}\n`;}); downloadText('checklist.txt',txt); }
+
+// ========== 📜 CERT & UTILS ==========
+function downloadCert() {
+  const txt=`🏆 ${t('cert_title')}\n${'='.repeat(40)}\n\n👤 Пользователь: ________________\n📊 Результат: ${trainerScore}/5\n🎖 Уровень: ${document.getElementById('certLevel').textContent}\n📅 Дата: ${new Date().toLocaleDateString()}\n\n${t('cert_sub')}\n\n🔒 Generated by Anti-AI Qwen Companion (Offline)`;
+  downloadText('certificate.txt',txt);
+}
+function downloadText(fn, content) { const b=new Blob([content],{type:'text/plain;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=fn; a.click(); URL.revokeObjectURL(a.href); }
+function copyPhone() { navigator.clipboard.writeText('89202275676').then(()=>alert(t('copied'))); }
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ========== 🚀 INIT ==========
+document.addEventListener('DOMContentLoaded', ()=>{
+  applyLang();
+  document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
+});
+</script>
+</body>
+</html>
